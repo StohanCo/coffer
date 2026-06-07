@@ -1,0 +1,42 @@
+# Production compose for the Contabo server (homefinance.findyou.work).
+#
+# The container is bound to 127.0.0.1 only — the host's nginx (the same one that
+# already fronts calls.findyou.work) terminates TLS and reverse-proxies to it.
+# Nothing here is published to the public internet directly.
+#
+# Usage on the server:
+#   cp .env.example .env   # then fill in the secrets + domain
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# Port 8760 is chosen to avoid the calls app (8750) already on this box.
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: finops-local:latest
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8760:3000"
+    environment:
+      DATABASE_URL: /data/finops.db
+      UPLOADS_DIR: /uploads
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET in .env}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-https://homefinance.findyou.work}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://homefinance.findyou.work}
+      NEXT_PUBLIC_DEFAULT_CURRENCY: ${NEXT_PUBLIC_DEFAULT_CURRENCY:-NZD}
+      NEXT_PUBLIC_DEFAULT_LOCALE: ${NEXT_PUBLIC_DEFAULT_LOCALE:-en-NZ}
+      CRON_SECRET: ${CRON_SECRET:?Set CRON_SECRET in .env}
+    volumes:
+      - finops_data:/data
+      - finops_uploads:/uploads
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  finops_data:
+  finops_uploads:

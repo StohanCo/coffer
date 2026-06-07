@@ -80,15 +80,18 @@ export default function AppShell({ user, data }: Props) {
           setSidebarOpen(false);
         }}
         className={cn(
-          "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors cursor-pointer",
+          "group relative flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all cursor-pointer",
           active
-            ? "bg-cyan-500/10 text-cyan-400"
+            ? "bg-emerald-500/10 text-emerald-400"
             : "text-slate-400 hover:bg-slate-800/60 hover:text-slate-200"
         )}
       >
-        <Icon className="h-4 w-4 flex-shrink-0" />
+        {active && (
+          <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-emerald-400" aria-hidden="true" />
+        )}
+        <Icon className={cn("h-4 w-4 flex-shrink-0 transition-transform", !active && "group-hover:scale-110")} />
         {item.label}
-        {active && <ChevronRight className="ml-auto h-3.5 w-3.5 text-cyan-500/60" />}
+        {active && <ChevronRight className="ml-auto h-3.5 w-3.5 text-emerald-500/60" />}
       </button>
     );
   }
@@ -98,11 +101,11 @@ export default function AppShell({ user, data }: Props) {
       <aside className="flex h-full w-60 flex-col border-r border-slate-800/60 bg-brand-sidebar">
         {/* Logo */}
         <div className="flex h-14 items-center gap-3 border-b border-slate-800/60 px-4">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500 shadow-lg shadow-emerald-500/20">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-lg shadow-emerald-500/25">
             <span className="text-sm font-bold text-white">F</span>
           </div>
           <div>
-            <p className="text-sm font-semibold text-white">FinOps Local</p>
+            <p className="text-sm font-semibold tracking-tight text-white">FinOps Local</p>
             <p className="text-[10px] text-slate-500">Self-hosted</p>
           </div>
         </div>
@@ -130,7 +133,8 @@ export default function AppShell({ user, data }: Props) {
             <button
               onClick={handleSignOut}
               title="Sign out"
-              className="text-slate-500 hover:text-rose-400 transition-colors cursor-pointer"
+              aria-label="Sign out"
+              className="text-slate-500 hover:text-rose-400 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-rose-500/60 rounded p-1"
             >
               <LogOut className="h-4 w-4" />
             </button>
@@ -188,16 +192,18 @@ export default function AppShell({ user, data }: Props) {
       {/* Main content */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Mobile header */}
-        <header className="flex h-14 items-center justify-between border-b border-slate-800/60 bg-brand-sidebar px-4 md:hidden">
+        <header className="flex h-14 items-center justify-between border-b border-slate-800/60 bg-brand-sidebar/80 px-4 backdrop-blur md:hidden">
           <div className="flex items-center gap-3">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600">
               <span className="text-xs font-bold text-white">F</span>
             </div>
-            <span className="text-sm font-semibold text-white">FinOps Local</span>
+            <span className="text-sm font-semibold tracking-tight text-white">FinOps Local</span>
           </div>
           <button
             onClick={() => setSidebarOpen(true)}
-            className="text-slate-400 hover:text-white transition-colors cursor-pointer"
+            aria-label="Open navigation menu"
+            aria-expanded={sidebarOpen}
+            className="rounded-lg p-1 text-slate-400 transition-colors cursor-pointer hover:bg-slate-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/60"
           >
             <Menu className="h-5 w-5" />
           </button>
@@ -205,7 +211,7 @@ export default function AppShell({ user, data }: Props) {
 
         {/* Scrollable content */}
         <main className="flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-7xl px-4 py-6 md:px-6 lg:px-8">
+          <div key={section} className="mx-auto max-w-7xl px-4 py-6 animate-fade-up md:px-6 lg:px-8">
             {renderSection()}
           </div>
         </main>

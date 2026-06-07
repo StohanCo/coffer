@@ -1,9 +1,11 @@
 import { db } from "@/lib/db/client";
 import { financialAccount, transaction, category, budget, userSettings } from "@/lib/db/schema";
-import { eq, desc, gte, lte, and, sql } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import Decimal from "decimal.js";
 import { nanoid } from "nanoid";
-import { startOfMonth, endOfMonth, subMonths } from "date-fns";
+import { startOfMonth, endOfMonth } from "date-fns";
+import { allCurrencies } from "@/lib/currencies";
+import { getFxRates, convert } from "@/lib/fx";
 
 const DEFAULT_CATEGORIES = [
   { name: "Salary", icon: "briefcase", color: "#10b981", type: "income" },
@@ -29,11 +31,19 @@ export type DashboardData = {
   settings: typeof userSettings.$inferSelect | null;
   summary: {
     totalBalance: string;
+    totalBalanceFx: string; // sum of all accounts converted to default currency
     monthIncome: string;
     monthExpenses: string;
     currencies: string[];
   };
   balanceByCurrency: Record<string, string>;
+  availableCurrencies: string[];
+  fx: {
+    base: string;
+    rates: Record<string, number>;
+    source: "live" | "fallback";
+    fetchedAt: number;
+  };
 };
 
 export async function getDashboardData(userId: string): Promise<DashboardData> {
@@ -99,21 +109,26 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
     where: and(eq(budget.userId, userId), eq(budget.isActive, true)),
   });
 
-  // Calculate month income/expenses
+  // Determine base currency early — we need it for FX before any aggregations
+  const defaultCurrency = settings?.defaultCurrency ?? (process.env.NEXT_PUBLIC_DEFAULT_CURRENCY ?? "NZD");
+  const fx = await getFxRates(defaultCurrency);
+
+  // Filter transactions to the current month
   const monthTransactions = transactions.filter((t) => {
     const d = t.date instanceof Date ? t.date : new Date(t.date);
     return d >= monthStart && d <= monthEnd;
   });
 
+  // Calculate month income/expenses, converting each transaction into the base currency
   let monthIncome = new Decimal(0);
   let monthExpenses = new Decimal(0);
   for (const t of monthTransactions) {
-    const amt = new Decimal(t.amount);
-    if (t.type === "income") monthIncome = monthIncome.plus(amt.abs());
-    else if (t.type === "expense") monthExpenses = monthExpenses.plus(amt.abs());
+    const amtInBase = new Decimal(convert(t.amount, t.currency, defaultCurrency, fx.rates)).abs();
+    if (t.type === "income") monthIncome = monthIncome.plus(amtInBase);
+    else if (t.type === "expense") monthExpenses = monthExpenses.plus(amtInBase);
   }
 
-  // Balance by currency
+  // Balance by currency (each account in its own native currency)
   const balanceByCurrency: Record<string, string> = {};
   for (const acc of accounts) {
     const cur = acc.currency;
@@ -124,21 +139,28 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
 
   const currencies = [...new Set(accounts.map((a) => a.currency))];
 
-  // Total balance (primary currency only — FX handled client-side)
-  const defaultCurrency = settings?.defaultCurrency ?? (process.env.NEXT_PUBLIC_DEFAULT_CURRENCY ?? "NZD");
+  // Total balance in base currency only (no conversion — just the base accounts)
   const totalBalance = balanceByCurrency[defaultCurrency] ?? "0";
 
-  // Budget spent amounts
+  // FX-normalized total: convert every account balance to defaultCurrency and sum
+  let totalBalanceFx = new Decimal(0);
+  for (const acc of accounts) {
+    totalBalanceFx = totalBalanceFx.plus(
+      new Decimal(convert(acc.balance, acc.currency, defaultCurrency, fx.rates))
+    );
+  }
+
+  // Budget spent: convert each transaction to the budget's currency
   const budgetsWithSpent = budgets.map((b) => {
     const spent = transactions
-      .filter(
-        (t) =>
-          t.type === "expense" &&
-          t.categoryId === b.categoryId &&
-          t.currency === b.currency
-      )
-      .reduce((acc, t) => acc.plus(new Decimal(t.amount).abs()), new Decimal(0));
-
+      .filter((t) => t.type === "expense" && t.categoryId === b.categoryId)
+      .reduce(
+        (acc, t) =>
+          acc.plus(
+            new Decimal(convert(t.amount, t.currency, b.currency, fx.rates)).abs()
+          ),
+        new Decimal(0)
+      );
     return { ...b, spent: spent.toString() };
   });
 
@@ -150,10 +172,13 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
     settings: settings ?? null,
     summary: {
       totalBalance,
+      totalBalanceFx: totalBalanceFx.toString(),
       monthIncome: monthIncome.toString(),
       monthExpenses: monthExpenses.toString(),
       currencies,
     },
     balanceByCurrency,
+    availableCurrencies: allCurrencies(settings?.extraCurrencies ?? "[]"),
+    fx: { base: fx.base, rates: fx.rates, source: fx.source, fetchedAt: fx.fetchedAt },
   };
 }

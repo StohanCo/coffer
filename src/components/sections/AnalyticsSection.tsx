@@ -16,6 +16,7 @@ import { format, subMonths, startOfMonth, endOfMonth } from "date-fns";
 import Decimal from "decimal.js";
 import { formatCurrency } from "@/lib/utils";
 import type { DashboardData } from "@/server/services/dashboard";
+import { PageHeader } from "@/components/ui/Page";
 
 type Props = { data: DashboardData };
 
@@ -74,16 +75,11 @@ export default function AnalyticsSection({ data }: Props) {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Analytics</h1>
-        <p className="text-sm text-slate-400 mt-0.5">Income vs expenses over time</p>
-      </div>
+      <PageHeader title="Analytics" subtitle="Income vs expenses over time" />
 
       {/* Income vs Expenses — area chart */}
-      <section className="rounded-xl border border-slate-800/60 bg-brand-surface/60 p-5">
-        <h2 className="mb-5 text-sm font-semibold uppercase tracking-wider text-slate-400">
-          6-Month Overview
-        </h2>
+      <section className="card p-5">
+        <h2 className="stat-label mb-5">6-month overview</h2>
         <ResponsiveContainer width="100%" height={240}>
           <AreaChart data={months} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
             <defs>
@@ -113,10 +109,8 @@ export default function AnalyticsSection({ data }: Props) {
 
       {/* Category breakdown */}
       {categoryData.length > 0 && (
-        <section className="rounded-xl border border-slate-800/60 bg-brand-surface/60 p-5">
-          <h2 className="mb-5 text-sm font-semibold uppercase tracking-wider text-slate-400">
-            This Month — by Category
-          </h2>
+        <section className="card p-5">
+          <h2 className="stat-label mb-5">This month — by category</h2>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={categoryData} layout="vertical" margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" horizontal={false} />
@@ -126,7 +120,7 @@ export default function AnalyticsSection({ data }: Props) {
                 contentStyle={{ backgroundColor: "#0d1321", border: "1px solid #1e293b", borderRadius: 8, fontSize: 12 }}
                 formatter={(v: number) => [fmt(v)]}
               />
-              <Bar dataKey="amount" fill="#06b6d4" radius={[0, 4, 4, 0]} name="Spent" />
+              <Bar dataKey="amount" fill="#10b981" radius={[0, 4, 4, 0]} name="Spent" />
             </BarChart>
           </ResponsiveContainer>
         </section>

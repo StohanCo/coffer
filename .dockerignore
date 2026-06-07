@@ -6,7 +6,6 @@ node_modules
 !.env.example
 data
 uploads
-drizzle
 *.md
 .claude
 .vscode

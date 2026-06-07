@@ -4,6 +4,7 @@ import { format, subMonths, startOfMonth, endOfMonth } from "date-fns";
 import Decimal from "decimal.js";
 import { formatCurrency } from "@/lib/utils";
 import type { DashboardData } from "@/server/services/dashboard";
+import { PageHeader } from "@/components/ui/Page";
 
 type Props = { data: DashboardData };
 
@@ -51,33 +52,30 @@ export default function StatsSection({ data }: Props) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Statistics</h1>
-        <p className="text-sm text-slate-400 mt-0.5">Month-over-month comparisons</p>
-      </div>
+      <PageHeader title="Statistics" subtitle="Month-over-month comparisons" />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          label="This Month Income"
+          label="This month income"
           value={formatCurrency(thisIncome.toString(), currency, locale)}
           delta={incomeDelta}
           sub={`vs ${format(subMonths(now, 1), "MMM")}`}
           positive
         />
         <StatCard
-          label="This Month Expenses"
+          label="This month expenses"
           value={formatCurrency(thisExpenses.toString(), currency, locale)}
           delta={expensesDelta}
           sub={`vs ${format(subMonths(now, 1), "MMM")}`}
           positive={false}
         />
         <StatCard
-          label="Avg Transaction"
+          label="Avg transaction"
           value={formatCurrency(avgTransaction.toString(), currency, locale)}
           sub={`across ${totalTransactions} transactions`}
         />
         <StatCard
-          label="Net This Month"
+          label="Net this month"
           value={formatCurrency(thisIncome.minus(thisExpenses).toString(), currency, locale)}
           sub="income minus expenses"
           positive={thisIncome.gte(thisExpenses)}
@@ -85,10 +83,8 @@ export default function StatsSection({ data }: Props) {
       </div>
 
       {/* Accounts balance list */}
-      <section className="rounded-xl border border-slate-800/60 bg-brand-surface/60 p-5">
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-400">
-          Account Balances
-        </h2>
+      <section className="card p-5">
+        <h2 className="stat-label mb-4">Account balances</h2>
         <div className="space-y-3">
           {accounts.map((acc) => (
             <div key={acc.id} className="flex items-center gap-3">
@@ -120,9 +116,9 @@ function StatCard({
   positive?: boolean;
 }) {
   return (
-    <div className="rounded-xl border border-slate-800/60 bg-brand-surface/60 p-4">
-      <p className="text-xs font-medium uppercase tracking-wider text-slate-500">{label}</p>
-      <p className="mt-2 text-xl font-bold font-mono text-white">{value}</p>
+    <div className="card p-4">
+      <p className="stat-label">{label}</p>
+      <p className="mt-2 font-mono text-xl font-bold text-white">{value}</p>
       <div className="mt-1 flex items-center gap-2">
         {delta != null && (
           <span

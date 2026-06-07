@@ -2,6 +2,27 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  /* Tabular numerals make currency columns line up cleanly */
+  .font-mono,
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+}
+
+/* Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 @layer base {
   :root {
     --background: 222 47% 5%;
@@ -13,7 +34,7 @@
     --popover: 222 47% 8%;
     --popover-foreground: 210 40% 96%;
 
-    --primary: 192 91% 46%;
+    --primary: 160 84% 39%;
     --primary-foreground: 222 47% 5%;
 
     --secondary: 217 33% 14%;
@@ -30,7 +51,7 @@
 
     --border: 217 33% 14%;
     --input: 217 33% 14%;
-    --ring: 192 91% 46%;
+    --ring: 160 84% 39%;
 
     --radius: 0.75rem;
   }
@@ -42,6 +63,21 @@
   }
   body {
     @apply bg-brand-bg text-foreground font-sans antialiased;
+    /* Ambient depth: a faint emerald glow top-left + a cool fade — never flat. */
+    background-image:
+      radial-gradient(70rem 40rem at 0% -10%, rgb(16 185 129 / 0.06), transparent 60%),
+      radial-gradient(60rem 40rem at 100% 0%, rgb(30 58 138 / 0.08), transparent 55%);
+    background-attachment: fixed;
+  }
+
+  ::selection {
+    background: rgb(16 185 129 / 0.3);
+    color: #fff;
+  }
+
+  /* Tighter, more intentional display type */
+  h1, h2, h3 {
+    letter-spacing: -0.02em;
   }
 
   /* Thin scrollbar */
@@ -63,5 +99,50 @@
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+}
+
+@layer components {
+  /* ── Surfaces ──────────────────────────────────────────────────────────── */
+  .card {
+    @apply rounded-2xl border border-slate-800/70 bg-brand-surface/80 shadow-card backdrop-blur-sm;
+  }
+  .card-interactive {
+    @apply card transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-700 hover:shadow-card-hover;
+  }
+
+  /* ── Buttons ───────────────────────────────────────────────────────────── */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg text-sm font-medium transition-all duration-150
+           cursor-pointer select-none active:scale-[0.98]
+           focus-visible:outline-none focus-visible:ring-2
+           disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100;
+  }
+  .btn-primary {
+    @apply btn bg-emerald-600 px-4 py-2.5 text-white shadow-sm shadow-emerald-950/40
+           hover:bg-emerald-500 focus-visible:ring-emerald-500/60;
+  }
+  .btn-secondary {
+    @apply btn border border-slate-700 bg-slate-800/40 px-4 py-2.5 text-slate-300
+           hover:border-slate-600 hover:text-white focus-visible:ring-slate-500/50;
+  }
+  .btn-ghost {
+    @apply btn px-3 py-2 text-slate-400 hover:bg-slate-800/60 hover:text-slate-100
+           focus-visible:ring-slate-500/50;
+  }
+
+  /* ── Forms ─────────────────────────────────────────────────────────────── */
+  .input {
+    @apply w-full rounded-lg border border-slate-700 bg-slate-800/70 px-3 py-2.5 text-sm text-white
+           outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30
+           placeholder:text-slate-600;
+  }
+
+  /* ── Misc ──────────────────────────────────────────────────────────────── */
+  .badge {
+    @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium;
+  }
+  .stat-label {
+    @apply text-[11px] font-medium uppercase tracking-wider text-slate-500;
   }
 }

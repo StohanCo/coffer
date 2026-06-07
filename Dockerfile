@@ -8,6 +8,15 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml* ./
 RUN pnpm install --frozen-lockfile
 
+# ── prod-deps ─────────────────────────────────────────────────────────────────
+# Production-only node_modules for the runtime image. Next's standalone tracer
+# can't follow libsql's dynamic/native requires, so we ship a real, complete
+# runtime dependency tree instead of the trimmed standalone one.
+FROM base AS prod-deps
+WORKDIR /app
+COPY package.json pnpm-lock.yaml* ./
+RUN pnpm install --frozen-lockfile --prod
+
 # ── builder ───────────────────────────────────────────────────────────────────
 FROM base AS builder
 WORKDIR /app
@@ -30,6 +39,9 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
+# On-server receipt OCR — no third-party API. English data pack only.
+RUN apk add --no-cache tesseract-ocr tesseract-ocr-data-eng
+
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
@@ -38,6 +50,11 @@ RUN mkdir -p /data /uploads && chown -R nextjs:nodejs /data /uploads
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# Overlay the complete production node_modules (after standalone, so it wins).
+# Fixes libsql native binding + transitive deps the standalone tracer drops.
+COPY --from=prod-deps --chown=nextjs:nodejs /app/node_modules ./node_modules
+# SQL migrations — applied on boot (see src/lib/db/migrate.ts) to create the schema on a fresh volume.
+COPY --from=builder --chown=nextjs:nodejs /app/drizzle ./drizzle
 
 USER nextjs
 

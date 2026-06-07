@@ -60,6 +60,27 @@ const config: Config = {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      boxShadow: {
+        // Tinted toward the dark navy base rather than pure black — softer, deliberate depth.
+        card: "0 1px 2px 0 rgb(2 6 18 / 0.4), 0 1px 3px 0 rgb(2 6 18 / 0.3)",
+        "card-hover":
+          "0 8px 24px -6px rgb(2 6 18 / 0.55), 0 2px 8px -2px rgb(2 6 18 / 0.4)",
+        glow: "0 0 0 1px rgb(16 185 129 / 0.18), 0 10px 30px -8px rgb(16 185 129 / 0.28)",
+      },
+      keyframes: {
+        "fade-up": {
+          from: { opacity: "0", transform: "translateY(8px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        "fade-in": {
+          from: { opacity: "0" },
+          to: { opacity: "1" },
+        },
+      },
+      animation: {
+        "fade-up": "fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) both",
+        "fade-in": "fade-in 0.3s ease-out both",
+      },
     },
   },
   plugins: [],

@@ -51,7 +51,7 @@ export default function AuthCard({ mode }: { mode: Mode }) {
             onChange={(e) => setName(e.target.value)}
             required
             placeholder="Your name"
-            className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm text-white outline-none transition focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/40 placeholder:text-slate-600"
+            className="input"
           />
         </div>
       )}
@@ -63,7 +63,7 @@ export default function AuthCard({ mode }: { mode: Mode }) {
           onChange={(e) => setEmail(e.target.value)}
           required
           placeholder="you@example.com"
-          className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm text-white outline-none transition focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/40 placeholder:text-slate-600"
+          className="input"
         />
       </div>
       <div>
@@ -75,7 +75,7 @@ export default function AuthCard({ mode }: { mode: Mode }) {
           required
           minLength={8}
           placeholder="••••••••"
-          className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm text-white outline-none transition focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/40 placeholder:text-slate-600"
+          className="input"
         />
       </div>
 
@@ -85,11 +85,7 @@ export default function AuthCard({ mode }: { mode: Mode }) {
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full rounded-lg bg-cyan-600 py-2.5 text-sm font-medium text-white hover:bg-cyan-500 disabled:opacity-50 transition cursor-pointer"
-      >
+      <button type="submit" disabled={loading} className="btn-primary w-full">
         {loading ? (mode === "register" ? "Creating account…" : "Signing in…") : mode === "register" ? "Create account" : "Sign in"}
       </button>
 
@@ -97,14 +93,14 @@ export default function AuthCard({ mode }: { mode: Mode }) {
         {mode === "sign-in" ? (
           <>
             No account?{" "}
-            <Link href="/register" className="text-cyan-400 hover:text-cyan-300 transition-colors">
+            <Link href="/register" className="font-medium text-emerald-400 hover:text-emerald-300 transition-colors">
               Register
             </Link>
           </>
         ) : (
           <>
             Already have an account?{" "}
-            <Link href="/sign-in" className="text-cyan-400 hover:text-cyan-300 transition-colors">
+            <Link href="/sign-in" className="font-medium text-emerald-400 hover:text-emerald-300 transition-colors">
               Sign in
             </Link>
           </>

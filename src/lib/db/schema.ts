@@ -1,4 +1,5 @@
 import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core";
+import { relations } from "drizzle-orm";
 
 // ── better-auth required tables ───────────────────────────────────────────────
 
@@ -103,6 +104,8 @@ export const transaction = sqliteTable("transaction", {
   tags: text("tags"), // JSON array stored as TEXT
   isRecurring: integer("isRecurring", { mode: "boolean" }).notNull().default(false),
   recurringId: text("recurringId"),
+  // Pairs the two legs of a transfer — both legs share the same transferId.
+  transferId: text("transferId"),
   createdAt: integer("createdAt", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updatedAt", { mode: "timestamp" }).notNull(),
 });
@@ -161,6 +164,13 @@ export const accountSnapshot = sqliteTable("account_snapshot", {
   createdAt: integer("createdAt", { mode: "timestamp" }).notNull(),
 });
 
+export const fxRateCache = sqliteTable("fx_rate_cache", {
+  base: text("base").primaryKey(), // currency code we normalize to
+  ratesJson: text("ratesJson").notNull(), // JSON: { CODE: 1 CODE in base }
+  source: text("source").notNull().default("live"), // live | fallback
+  fetchedAt: integer("fetchedAt", { mode: "timestamp" }).notNull(),
+});
+
 export const userSettings = sqliteTable("user_settings", {
   userId: text("userId")
     .primaryKey()
@@ -170,8 +180,60 @@ export const userSettings = sqliteTable("user_settings", {
   fiscalYearStart: integer("fiscalYearStart").notNull().default(4), // April for NZ
   taxRate: real("taxRate").notNull().default(0.33), // NZ top tax rate
   theme: text("theme").notNull().default("dark"),
+  // JSON array of ISO 4217 codes the user has added beyond the built-in list
+  extraCurrencies: text("extraCurrencies").notNull().default("[]"),
   updatedAt: integer("updatedAt", { mode: "timestamp" }).notNull(),
 });
+
+// ── Relations ─────────────────────────────────────────────────────────────────
+
+export const userRelations = relations(user, ({ many, one }) => ({
+  financialAccounts: many(financialAccount),
+  transactions: many(transaction),
+  categories: many(category),
+  budgets: many(budget),
+  settings: one(userSettings, { fields: [user.id], references: [userSettings.userId] }),
+}));
+
+export const financialAccountRelations = relations(financialAccount, ({ one, many }) => ({
+  user: one(user, { fields: [financialAccount.userId], references: [user.id] }),
+  transactions: many(transaction),
+  snapshots: many(accountSnapshot),
+}));
+
+export const categoryRelations = relations(category, ({ one, many }) => ({
+  user: one(user, { fields: [category.userId], references: [user.id] }),
+  transactions: many(transaction),
+  budgets: many(budget),
+}));
+
+export const transactionRelations = relations(transaction, ({ one }) => ({
+  user: one(user, { fields: [transaction.userId], references: [user.id] }),
+  account: one(financialAccount, { fields: [transaction.accountId], references: [financialAccount.id] }),
+  category: one(category, { fields: [transaction.categoryId], references: [category.id] }),
+}));
+
+export const budgetRelations = relations(budget, ({ one }) => ({
+  user: one(user, { fields: [budget.userId], references: [user.id] }),
+  category: one(category, { fields: [budget.categoryId], references: [category.id] }),
+}));
+
+export const recurringTransactionRelations = relations(recurringTransaction, ({ one }) => ({
+  user: one(user, { fields: [recurringTransaction.userId], references: [user.id] }),
+  account: one(financialAccount, { fields: [recurringTransaction.accountId], references: [financialAccount.id] }),
+  category: one(category, { fields: [recurringTransaction.categoryId], references: [category.id] }),
+}));
+
+export const accountSnapshotRelations = relations(accountSnapshot, ({ one }) => ({
+  account: one(financialAccount, { fields: [accountSnapshot.accountId], references: [financialAccount.id] }),
+  user: one(user, { fields: [accountSnapshot.userId], references: [user.id] }),
+}));
+
+export const userSettingsRelations = relations(userSettings, ({ one }) => ({
+  user: one(user, { fields: [userSettings.userId], references: [user.id] }),
+}));
+
+// ── Types ─────────────────────────────────────────────────────────────────────
 
 export type User = typeof user.$inferSelect;
 export type FinancialAccount = typeof financialAccount.$inferSelect;

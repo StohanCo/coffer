@@ -3,14 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
+import { Spinner } from "@/components/ui/Skeleton";
 
-type Props = { onClose: () => void };
+type Props = { onClose: () => void; currencies: string[] };
 
 const ACCOUNT_TYPES = ["checking", "savings", "credit", "investment", "loan", "cash"];
-const CURRENCIES = ["NZD", "AUD", "USD", "EUR", "GBP", "SGD", "JPY", "CAD"];
 const COLORS = ["#06b6d4", "#10b981", "#6366f1", "#f59e0b", "#ef4444", "#ec4899", "#64748b"];
 
-export default function AddAccountModal({ onClose }: Props) {
+export default function AddAccountModal({ onClose, currencies }: Props) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [type, setType] = useState("checking");
@@ -62,7 +62,7 @@ export default function AddAccountModal({ onClose }: Props) {
           </Field>
           <Field label="Currency">
             <select value={currency} onChange={(e) => setCurrency(e.target.value)} className={inputCls}>
-              {CURRENCIES.map((c) => <option key={c}>{c}</option>)}
+              {currencies.map((c) => <option key={c}>{c}</option>)}
             </select>
           </Field>
         </div>
@@ -82,16 +82,19 @@ export default function AddAccountModal({ onClose }: Props) {
                 key={c}
                 type="button"
                 onClick={() => setColor(c)}
-                className={`h-7 w-7 rounded-full transition-transform cursor-pointer ${color === c ? "scale-125 ring-2 ring-white/50" : "hover:scale-110"}`}
+                aria-label={`Select color ${c}`}
+                aria-pressed={color === c}
+                className={`h-7 w-7 rounded-full transition-transform cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500/60 ${color === c ? "scale-125 ring-2 ring-white/50" : "hover:scale-110"}`}
                 style={{ backgroundColor: c }}
               />
             ))}
           </div>
         </Field>
-        {error && <p className="text-xs text-rose-400">{error}</p>}
+        {error && <p className="text-xs text-rose-400" role="alert">{error}</p>}
         <div className="flex gap-3 pt-2">
           <button type="button" onClick={onClose} className={secondaryCls}>Cancel</button>
           <button type="submit" disabled={loading} className={primaryCls}>
+            {loading && <Spinner className="h-4 w-4" />}
             {loading ? "Creating…" : "Create account"}
           </button>
         </div>
@@ -102,12 +105,16 @@ export default function AddAccountModal({ onClose }: Props) {
 
 export function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-md rounded-2xl border border-slate-800 bg-brand-surface shadow-2xl">
-        <div className="flex items-center justify-between border-b border-slate-800 px-5 py-4">
-          <h2 className="font-semibold text-white">{title}</h2>
-          <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors cursor-pointer">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={onClose} aria-hidden="true" />
+      <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-slate-800 bg-brand-surface shadow-2xl animate-fade-up">
+        <div className="flex items-center justify-between border-b border-slate-800/80 px-5 py-4">
+          <h2 id="modal-title" className="text-base font-semibold tracking-tight text-white">{title}</h2>
+          <button
+            onClick={onClose}
+            aria-label="Close dialog"
+            className="rounded-lg p-1 text-slate-500 transition-colors cursor-pointer hover:bg-slate-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/60"
+          >
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -119,18 +126,17 @@ export function Modal({ title, onClose, children }: { title: string; onClose: ()
 
 export function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div>
-      <label className="mb-1.5 block text-xs font-medium text-slate-400">{label}</label>
+    <label className="block">
+      <span className="mb-1.5 block text-xs font-medium text-slate-400">{label}</span>
       {children}
-    </div>
+    </label>
   );
 }
 
-export const inputCls =
-  "w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm text-white outline-none transition focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/40 placeholder:text-slate-600";
+// Shared form/control classes — defined in globals.css @layer components so the
+// whole app stays visually consistent. Kept as exports for ergonomic reuse.
+export const inputCls = "input";
 
-export const primaryCls =
-  "flex-1 rounded-lg bg-cyan-600 py-2.5 text-sm font-medium text-white hover:bg-cyan-500 disabled:opacity-50 transition cursor-pointer";
+export const primaryCls = "btn-primary flex-1";
 
-export const secondaryCls =
-  "rounded-lg border border-slate-700 px-4 py-2.5 text-sm text-slate-300 hover:border-slate-600 hover:text-white transition cursor-pointer";
+export const secondaryCls = "btn-secondary";

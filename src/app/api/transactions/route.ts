@@ -40,44 +40,41 @@ export async function POST(req: Request) {
 
   const { accountId, amount, type } = parsed.data;
 
-  // Verify account belongs to user
   const account = await db.query.financialAccount.findFirst({
     where: and(eq(financialAccount.id, accountId), eq(financialAccount.userId, session.user.id)),
   });
   if (!account) return err("Account not found", 404);
 
-  // Update account balance
   const delta = type === "income" ? new Decimal(amount) : new Decimal(amount).negated();
   const newBalance = new Decimal(account.balance).plus(delta).toString();
 
   const now = new Date();
   const txDate = new Date(parsed.data.date);
+  const signedAmount = type === "income" ? amount : `-${amount}`;
 
-  const [tx] = await db.transaction(async (tx) => {
-    await db
-      .update(financialAccount)
-      .set({ balance: newBalance, updatedAt: now })
-      .where(eq(financialAccount.id, accountId));
+  await db
+    .update(financialAccount)
+    .set({ balance: newBalance, updatedAt: now })
+    .where(eq(financialAccount.id, accountId));
 
-    return db
-      .insert(transaction)
-      .values({
-        id: nanoid(),
-        userId: session.user.id,
-        accountId,
-        categoryId: parsed.data.categoryId ?? null,
-        amount: type === "income" ? amount : `-${amount}`,
-        currency: parsed.data.currency,
-        description: parsed.data.description,
-        notes: parsed.data.notes ?? null,
-        type,
-        date: txDate,
-        isRecurring: false,
-        createdAt: now,
-        updatedAt: now,
-      })
-      .returning();
-  });
+  const [created] = await db
+    .insert(transaction)
+    .values({
+      id: nanoid(),
+      userId: session.user.id,
+      accountId,
+      categoryId: parsed.data.categoryId ?? null,
+      amount: signedAmount,
+      currency: parsed.data.currency,
+      description: parsed.data.description,
+      notes: parsed.data.notes ?? null,
+      type,
+      date: txDate,
+      isRecurring: false,
+      createdAt: now,
+      updatedAt: now,
+    })
+    .returning();
 
-  return ok(tx, 201);
+  return ok(created, 201);
 }
