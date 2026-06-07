@@ -102,10 +102,10 @@ export default function AppShell({ user, data }: Props) {
         {/* Logo */}
         <div className="flex h-14 items-center gap-3 border-b border-slate-800/60 px-4">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-lg shadow-emerald-500/25">
-            <span className="text-sm font-bold text-white">F</span>
+            <span className="text-sm font-bold text-white">C</span>
           </div>
           <div>
-            <p className="text-sm font-semibold tracking-tight text-white">FinOps Local</p>
+            <p className="text-sm font-semibold tracking-tight text-white">Coffer</p>
             <p className="text-[10px] text-slate-500">Self-hosted</p>
           </div>
         </div>
@@ -195,9 +195,9 @@ export default function AppShell({ user, data }: Props) {
         <header className="flex h-14 items-center justify-between border-b border-slate-800/60 bg-brand-sidebar/80 px-4 backdrop-blur md:hidden">
           <div className="flex items-center gap-3">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600">
-              <span className="text-xs font-bold text-white">F</span>
+              <span className="text-xs font-bold text-white">C</span>
             </div>
-            <span className="text-sm font-semibold tracking-tight text-white">FinOps Local</span>
+            <span className="text-sm font-semibold tracking-tight text-white">Coffer</span>
           </div>
           <button
             onClick={() => setSidebarOpen(true)}

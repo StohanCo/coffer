@@ -1,6 +1,6 @@
-# FinOps Local
+# Coffer
 
-A self-hosted personal finance tracker built for homelabs and NZ contractors. Single Docker container, SQLite database, no external dependencies.
+A self-hosted personal finance tracker built for homelabs and NZ contractors. Single Docker container, SQLite database, on-server receipt OCR, no external dependencies.
 
 ![CI](https://github.com/your-username/finops-local/actions/workflows/ci.yml/badge.svg)
 

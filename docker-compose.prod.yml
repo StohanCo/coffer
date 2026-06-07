@@ -38,5 +38,9 @@ services:
       start_period: 15s
 
 volumes:
+  # Explicit names so the data is NOT tied to the folder/project name — the
+  # volumes survive folder renames, and backups always reference the same name.
   finops_data:
+    name: finops_data
   finops_uploads:
+    name: finops_uploads

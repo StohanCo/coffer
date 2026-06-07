@@ -17,8 +17,8 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FinOps Local",
-  description: "Self-hosted personal finance tracker",
+  title: "Coffer",
+  description: "Coffer — self-hosted personal finance tracker",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

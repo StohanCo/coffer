@@ -6,7 +6,7 @@ export default function RegisterPage() {
       <div className="w-full max-w-sm animate-fade-up">
         <div className="mb-8 text-center">
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-lg shadow-emerald-500/30">
-            <span className="text-2xl font-bold text-white">F</span>
+            <span className="text-2xl font-bold text-white">C</span>
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-white">Create your account</h1>
           <p className="mt-1.5 text-sm text-slate-400">Start tracking your finances privately</p>

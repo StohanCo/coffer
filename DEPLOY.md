@@ -139,20 +139,44 @@ sudo nginx -t && sudo systemctl reload nginx
 
 ## 7. Backups
 
-Everything lives in two Docker named volumes. Back them up periodically:
+Your data (SQLite DB + receipts) lives in two Docker **named volumes**,
+`finops_data` and `finops_uploads`. They are **not** deleted by rebuilds or
+`docker compose up --build` — only an explicit `docker volume rm` or
+`docker compose down -v` removes them. So updating the app never loses data.
+
+To back up *outside* Docker (copy off-server, keep history), use the bundled script:
 
 ```bash
-# SQLite database
-docker run --rm -v finops-local_finops_data:/data -v $PWD:/backup alpine \
-  tar czf /backup/finops-data-$(date +%F).tar.gz -C /data .
-
-# Receipt uploads
-docker run --rm -v finops-local_finops_uploads:/uploads -v $PWD:/backup alpine \
-  tar czf /backup/finops-uploads-$(date +%F).tar.gz -C /uploads .
+./scripts/backup.sh                 # writes backups/finops-backup-<date>.tgz
+./scripts/restore.sh backups/finops-backup-YYYY-MM-DD_HHMM.tgz   # to restore
 ```
 
-> Volume names are prefixed with the compose project name (the folder, `finops-local`).
-> Confirm with `docker volume ls`.
+Automate it with cron (daily at 02:30):
+
+```bash
+crontab -e
+# add:
+30 2 * * * cd /opt/finops-local && ./scripts/backup.sh >> backups/backup.log 2>&1
+```
+
+Then sync `backups/` to another machine (rsync/rclone) for off-site safety.
+
+### One-time migration (if you deployed before stable volume names)
+
+Earlier builds used a folder-prefixed volume (`finops-local_finops_data`). The
+compose file now uses stable names (`finops_data`). If you already have data in
+the old volume, copy it across **once** before the next `up`:
+
+```bash
+docker volume create finops_data
+docker volume create finops_uploads
+docker run --rm -v finops-local_finops_data:/from -v finops_data:/to alpine \
+  sh -c "cp -a /from/. /to/"
+docker run --rm -v finops-local_finops_uploads:/from -v finops_uploads:/to alpine \
+  sh -c "cp -a /from/. /to/"
+```
+
+(Skip this if `docker volume ls` shows no `finops-local_*` volumes.)
 
 ---
 
