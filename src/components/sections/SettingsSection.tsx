@@ -3,12 +3,15 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Decimal from "decimal.js";
-import { Plus, X, RefreshCw } from "lucide-react";
+import { Plus, X, RefreshCw, Trash2 } from "lucide-react";
 import { Spinner } from "@/components/ui/Skeleton";
 import { signOut } from "@/lib/auth/client";
 import { BUILTIN_CURRENCIES, parseCurrencies, isValidCurrencyCode } from "@/lib/currencies";
 import type { DashboardData } from "@/server/services/dashboard";
 import { PageHeader } from "@/components/ui/Page";
+
+const CATEGORY_COLORS = ["#10b981", "#06b6d4", "#6366f1", "#f59e0b", "#ef4444", "#ec4899", "#8b5cf6", "#64748b"];
+const CATEGORY_TYPES = ["expense", "income", "transfer"] as const;
 
 type Props = {
   data: DashboardData;
@@ -27,6 +30,44 @@ export default function SettingsSection({ data, user }: Props) {
   const [codeError, setCodeError] = useState<string | null>(null);
   const [codeLoading, setCodeLoading] = useState(false);
   const extraCurrencies = parseCurrencies(settings?.extraCurrencies ?? "[]");
+
+  // Category management
+  const [catName, setCatName] = useState("");
+  const [catType, setCatType] = useState<(typeof CATEGORY_TYPES)[number]>("expense");
+  const [catColor, setCatColor] = useState(CATEGORY_COLORS[0]);
+  const [catError, setCatError] = useState<string | null>(null);
+  const [catLoading, setCatLoading] = useState(false);
+  const [catBusyId, setCatBusyId] = useState<string | null>(null);
+
+  async function addCategory() {
+    setCatError(null);
+    if (!catName.trim()) { setCatError("Enter a name"); return; }
+    setCatLoading(true);
+    try {
+      const res = await fetch("/api/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: catName.trim(), type: catType, color: catColor }),
+      });
+      const json = await res.json();
+      if (!res.ok) { setCatError(json.error ?? "Failed"); return; }
+      setCatName("");
+      router.refresh();
+    } finally {
+      setCatLoading(false);
+    }
+  }
+
+  async function deleteCategory(id: string, name: string) {
+    if (!window.confirm(`Delete "${name}"? Transactions keep their data but become uncategorized.`)) return;
+    setCatBusyId(id);
+    try {
+      await fetch(`/api/categories/${id}`, { method: "DELETE" });
+      router.refresh();
+    } finally {
+      setCatBusyId(null);
+    }
+  }
 
   const [refreshing, setRefreshing] = useState(false);
   async function refreshRates() {
@@ -193,6 +234,70 @@ export default function SettingsSection({ data, user }: Props) {
             {codeLoading ? <Spinner className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
             Add
           </button>
+        </div>
+      </section>
+
+      {/* Categories */}
+      <section className="card p-5">
+        <h2 className="stat-label mb-1">Categories</h2>
+        <p className="mb-4 text-xs text-slate-600">
+          Categories power transactions and budgets. Add your own or remove ones you don&apos;t use.
+        </p>
+
+        {data.categories.length > 0 && (
+          <div className="mb-4 space-y-1.5">
+            {data.categories.map((c) => (
+              <div key={c.id} className="flex items-center gap-3 rounded-lg bg-slate-800/40 px-3 py-2">
+                <span className="h-2.5 w-2.5 flex-shrink-0 rounded-full" style={{ backgroundColor: c.color }} />
+                <span className="flex-1 truncate text-sm text-slate-200">{c.name}</span>
+                <span className="text-[10px] uppercase tracking-wider text-slate-500">{c.type}</span>
+                <button
+                  onClick={() => deleteCategory(c.id, c.name)}
+                  disabled={catBusyId === c.id}
+                  aria-label={`Delete ${c.name}`}
+                  className="rounded p-1 text-slate-500 transition-colors hover:text-rose-400 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-rose-500/60"
+                >
+                  {catBusyId === c.id ? <Spinner className="h-3.5 w-3.5" /> : <Trash2 className="h-3.5 w-3.5" />}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Add category */}
+        <div className="space-y-3 rounded-lg border border-slate-800 bg-slate-900/30 p-3">
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <input
+              value={catName}
+              onChange={(e) => { setCatName(e.target.value); setCatError(null); }}
+              onKeyDown={(e) => e.key === "Enter" && addCategory()}
+              placeholder="New category name"
+              className="input flex-1"
+            />
+            <select value={catType} onChange={(e) => setCatType(e.target.value as (typeof CATEGORY_TYPES)[number])} className="input sm:w-32">
+              {CATEGORY_TYPES.map((t) => <option key={t} value={t} className="capitalize">{t}</option>)}
+            </select>
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex gap-1.5">
+              {CATEGORY_COLORS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setCatColor(c)}
+                  aria-label={`Color ${c}`}
+                  aria-pressed={catColor === c}
+                  className={`h-6 w-6 rounded-full transition-transform cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500/60 ${catColor === c ? "scale-125 ring-2 ring-white/50" : "hover:scale-110"}`}
+                  style={{ backgroundColor: c }}
+                />
+              ))}
+            </div>
+            <button onClick={addCategory} disabled={catLoading || !catName.trim()} className="btn-primary">
+              {catLoading ? <Spinner className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+              Add
+            </button>
+          </div>
+          {catError && <p className="text-xs text-rose-400">{catError}</p>}
         </div>
       </section>
 
