@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Search, ArrowLeftRight, Pencil, Trash2 } from "lucide-react";
+import { Plus, Search, ArrowLeftRight, Pencil, Trash2, Download, Upload } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import type { DashboardData } from "@/server/services/dashboard";
 import AddTransactionModal from "@/components/modals/AddTransactionModal";
 import TransferModal from "@/components/modals/TransferModal";
+import ImportTransactionsModal from "@/components/modals/ImportTransactionsModal";
 import { Spinner } from "@/components/ui/Skeleton";
 import { PageHeader, EmptyState } from "@/components/ui/Page";
 
@@ -17,6 +18,7 @@ export default function TransactionsSection({ data }: Props) {
   const router = useRouter();
   const [showAdd, setShowAdd] = useState(false);
   const [showTransfer, setShowTransfer] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [editing, setEditing] = useState<Tx | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -60,7 +62,19 @@ export default function TransactionsSection({ data }: Props) {
         title="Transactions"
         subtitle={`${transactions.length} total`}
         action={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <a
+              href="/api/transactions/export"
+              className="btn-secondary px-3 py-2"
+              title="Export all transactions to CSV"
+            >
+              <Download className="h-4 w-4" />
+              Export
+            </a>
+            <button onClick={() => setShowImport(true)} className="btn-secondary px-3 py-2" title="Import transactions from CSV">
+              <Upload className="h-4 w-4" />
+              Import
+            </button>
             <button onClick={() => setShowTransfer(true)} className="btn-secondary">
               <ArrowLeftRight className="h-4 w-4" />
               Transfer
@@ -216,6 +230,7 @@ export default function TransactionsSection({ data }: Props) {
 
       {showAdd && <AddTransactionModal data={data} onClose={() => setShowAdd(false)} />}
       {showTransfer && <TransferModal data={data} onClose={() => setShowTransfer(false)} />}
+      {showImport && <ImportTransactionsModal onClose={() => setShowImport(false)} />}
       {editing && (
         <AddTransactionModal data={data} transaction={editing} onClose={() => setEditing(null)} />
       )}
