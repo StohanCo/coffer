@@ -1,5 +1,5 @@
 import { db } from "@/lib/db/client";
-import { financialAccount, transaction, category, budget, userSettings } from "@/lib/db/schema";
+import { financialAccount, transaction, category, budget, userSettings, recurringTransaction } from "@/lib/db/schema";
 import { eq, desc, and } from "drizzle-orm";
 import Decimal from "decimal.js";
 import { nanoid } from "nanoid";
@@ -28,6 +28,10 @@ export type DashboardData = {
   })[];
   categories: typeof category.$inferSelect[];
   budgets: (typeof budget.$inferSelect & { spent: string })[];
+  recurring: (typeof recurringTransaction.$inferSelect & {
+    account: typeof financialAccount.$inferSelect | null;
+    category: typeof category.$inferSelect | null;
+  })[];
   settings: typeof userSettings.$inferSelect | null;
   summary: {
     totalBalance: string;
@@ -109,6 +113,12 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
     where: and(eq(budget.userId, userId), eq(budget.isActive, true)),
   });
 
+  const recurring = await db.query.recurringTransaction.findMany({
+    where: eq(recurringTransaction.userId, userId),
+    with: { account: true, category: true },
+    orderBy: [recurringTransaction.nextDue],
+  });
+
   // Determine base currency early — we need it for FX before any aggregations
   const defaultCurrency = settings?.defaultCurrency ?? (process.env.NEXT_PUBLIC_DEFAULT_CURRENCY ?? "NZD");
   const fx = await getFxRates(defaultCurrency);
@@ -169,6 +179,7 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
     transactions: transactions as DashboardData["transactions"],
     categories,
     budgets: budgetsWithSpent,
+    recurring: recurring as DashboardData["recurring"],
     settings: settings ?? null,
     summary: {
       totalBalance,

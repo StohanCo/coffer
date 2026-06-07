@@ -10,6 +10,7 @@ import {
   BarChart3,
   TrendingUp,
   Receipt,
+  Repeat,
   FileText,
   Settings,
   Menu,
@@ -27,6 +28,7 @@ import BudgetsSection from "@/components/sections/BudgetsSection";
 import AnalyticsSection from "@/components/sections/AnalyticsSection";
 import StatsSection from "@/components/sections/StatsSection";
 import ReceiptsSection from "@/components/sections/ReceiptsSection";
+import RecurringSection from "@/components/sections/RecurringSection";
 import TaxSection from "@/components/sections/TaxSection";
 import SettingsSection from "@/components/sections/SettingsSection";
 
@@ -34,6 +36,7 @@ type Section =
   | "overview"
   | "accounts"
   | "transactions"
+  | "recurring"
   | "budgets"
   | "analytics"
   | "stats"
@@ -45,6 +48,7 @@ const NAV_ITEMS: { id: Section; label: string; icon: React.ElementType }[] = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
   { id: "accounts", label: "Accounts", icon: Wallet },
   { id: "transactions", label: "Transactions", icon: ArrowLeftRight },
+  { id: "recurring", label: "Recurring", icon: Repeat },
   { id: "budgets", label: "Budgets", icon: PieChart },
   { id: "analytics", label: "Analytics", icon: BarChart3 },
   { id: "stats", label: "Statistics", icon: TrendingUp },
@@ -152,6 +156,8 @@ export default function AppShell({ user, data }: Props) {
         return <AccountsSection data={data} />;
       case "transactions":
         return <TransactionsSection data={data} />;
+      case "recurring":
+        return <RecurringSection data={data} />;
       case "budgets":
         return <BudgetsSection data={data} />;
       case "analytics":
