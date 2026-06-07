@@ -21,5 +21,10 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
+  // `api/receipts/scan` is excluded: a Node-runtime middleware in standalone
+  // mode locks the request body stream before it reaches the route, which
+  // breaks multipart file uploads ("Response body object should not be
+  // disturbed or locked"). The scan route enforces auth itself via
+  // requireSession(), so skipping middleware here costs no security.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/receipts/scan|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
 };
